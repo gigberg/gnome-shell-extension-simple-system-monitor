@@ -23,5 +23,6 @@ echo "Start packing..."
 gnome-extensions pack src \
     --extra-source="settings.js" \
     --extra-source="prefs.ui" \
+    --schema="schemas/org.gnome.shell.extensions.simple-system-monitor.gschema.xml" \
     --force
 echo "Done."

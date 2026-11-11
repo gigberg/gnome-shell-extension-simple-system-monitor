@@ -6,6 +6,8 @@
 
 Simple system monitor extension for GNOME.
 
+Compatible with GNOME Shell 45 through 52.
+
 Show current CPU usage, memory usage and net speed on panel.
 
 It only shows text like `U 1% M 23% ↓ 456 K/s ↑ 789 K/s` on the right part of panel.

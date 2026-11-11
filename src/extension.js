@@ -30,9 +30,6 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
-// Attention: This module is not available as an ECMAScript Module
-const ByteArray = imports.byteArray;
-
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as Settings from './settings.js';
 
@@ -53,7 +50,7 @@ const getCurrentNetSpeed = (refreshInterval) => {
     try {
         const inputFile = Gio.File.new_for_path('/proc/net/dev');
         const [, content] = inputFile.load_contents(null);
-        const contentStr = ByteArray.toString(content);
+        const contentStr = new TextDecoder().decode(content);
         const contentLines = contentStr.split('\n');
 
         // Caculate the sum of all interfaces' traffic line by line.
@@ -117,7 +114,7 @@ const getCurrentCPUUsage = () => {
     try {
         const inputFile = Gio.File.new_for_path('/proc/stat');
         const [, content] = inputFile.load_contents(null);
-        const contentStr = ByteArray.toString(content);
+        const contentStr = new TextDecoder().decode(content);
         const contentLines = contentStr.split('\n');
 
         let currentCPUUsed = 0;
@@ -160,7 +157,7 @@ const getCurrentSwapUsage = () => {
     try {
         const inputFile = Gio.File.new_for_path('/proc/meminfo');
         const [, content] = inputFile.load_contents(null);
-        const contentStr = ByteArray.toString(content);
+        const contentStr = new TextDecoder().decode(content);
         const contentLines = contentStr.split('\n');
 
         let swapTotal = -1;
@@ -205,7 +202,7 @@ const getCurrentMemoryUsage = () => {
     try {
         const inputFile = Gio.File.new_for_path('/proc/meminfo');
         const [, content] = inputFile.load_contents(null);
-        const contentStr = ByteArray.toString(content);
+        const contentStr = new TextDecoder().decode(content);
         const contentLines = contentStr.split('\n');
 
         let memTotal = -1;
@@ -331,13 +328,9 @@ const toDisplayString = (
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
-        constructor() {
-            super();
-            this.extension = Extension.lookupByUUID('ssm-gnome@lgiki.net');
-        }
-
-        _init() {
+        _init(extension) {
             super._init(0.0, 'Simple System Monitor');
+            this._extension = extension;
 
             this._label = new St.Label({
                 y_align: Clutter.ActorAlign.CENTER,
@@ -361,7 +354,7 @@ const Indicator = GObject.registerClass(
 
             const settingMenuItem = new PopupMenu.PopupMenuItem(_('Setting'));
             settingMenuItem.connect('activate', () => {
-                this.extension.openPreferences();
+                this._extension.openPreferences();
             });
             this.menu.addMenuItem(settingMenuItem);
         }
@@ -413,7 +406,7 @@ export default class SSMExtension extends Extension {
 
         this._showFullNetSpeedUnit = this._prefs.SHOW_FULL_NET_SPEED_UNIT.get();
 
-        this._indicator = new Indicator();
+        this._indicator = new Indicator(this);
 
         this._update_text_style();
 
@@ -438,7 +431,7 @@ export default class SSMExtension extends Extension {
             this._indicator = null;
         }
         if (this._timeout != null) {
-            GLib.source_remove(this._timeout);
+            GLib.Source.remove(this._timeout);
             this._timeout = null;
         }
     }
@@ -550,7 +543,7 @@ export default class SSMExtension extends Extension {
         this._prefs.REFRESH_INTERVAL.changed(() => {
             this._refresh_interval = this._prefs.REFRESH_INTERVAL.get();
             if (this._timeout != null) {
-                GLib.source_remove(this._timeout);
+                GLib.Source.remove(this._timeout);
             }
             this._timeout = GLib.timeout_add_seconds(
                 GLib.PRIORITY_DEFAULT_IDLE,
