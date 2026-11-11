@@ -1,27 +1,19 @@
 #!/bin/bash
 
-enable_code_format=1
+set -euo pipefail
 
-if ! command -v npm &> /dev/null
-then
-    echo "npm could not be found, skip code format"
-    enable_code_format=0
-fi
-
-if [ $enable_code_format -eq 1 ]
-then
-    if [ ! -d 'node_modules/prettier' ]; then
-        echo "Prettier not installed, install it first"
-        npm install
-    fi
+if [ -x node_modules/.bin/prettier ]; then
     echo "Start formatting code..."
     npm run format
     echo "End formatting code."
+else
+    echo "Prettier not installed, skip code format"
 fi
 
 echo "Start packing..."
 gnome-extensions pack src \
     --extra-source="settings.js" \
     --extra-source="prefs.ui" \
+    --schema="schemas/org.gnome.shell.extensions.simple-system-monitor.gschema.xml" \
     --force
 echo "Done."
